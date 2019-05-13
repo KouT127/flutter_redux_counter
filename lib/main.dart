@@ -1,3 +1,4 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:redux/redux.dart';
@@ -11,7 +12,7 @@ class AppState {
   final int intCount;
   final double doubleCount;
 
-  AppState({
+  const AppState({
     this.intCount = 0,
     this.doubleCount = 0.0,
   });
@@ -147,23 +148,13 @@ class MainScreen extends StatelessWidget {
   }
 }
 
-class IntViewModel {
+class IntViewModel extends Equatable {
   final String intCount;
 
   IntViewModel({
     AppState state,
-  }) : intCount = state.intCount.toString();
-
-  @override
-  int get hashCode => intCount.hashCode;
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        other is IntViewModel &&
-            runtimeType == other.runtimeType &&
-            intCount == other.intCount;
-  }
+  })  : intCount = state.intCount.toString(),
+        super([state.intCount]);
 }
 
 class IntText extends StatefulWidget {
