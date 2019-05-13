@@ -2,57 +2,50 @@ import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:redux/redux.dart';
 
-class IncrementAction {}
+class IntIncrementAction {}
 
-class NestIncrementAction {}
+class DoubleIncrementAction {}
 
-void delayIncrement(Store<AppState> store, action, NextDispatcher next) {
-  if (action is IncrementAction) {
-    Future.delayed(Duration(seconds: 1), () {
-      next(NestIncrementAction());
-    });
-  }
-  next(action);
-}
-
+@immutable
 class AppState {
-  final int count;
-  final int nestCount;
+  final int intCount;
+  final double doubleCount;
 
   AppState({
-    this.count = 0,
-    this.nestCount = 0,
+    this.intCount = 0,
+    this.doubleCount = 0.0,
   });
 
   AppState copyWith({
-    int count,
-    int nestCount,
+    int intCount,
+    double doubleCount,
   }) {
     return AppState(
-      count: count ?? this.count,
-      nestCount: nestCount ?? this.nestCount,
+      intCount: intCount ?? this.intCount,
+      doubleCount: doubleCount ?? this.doubleCount,
     );
   }
 }
 
 final counterReducer = combineReducers<AppState>([
-  TypedReducer<AppState, IncrementAction>(increment),
-  TypedReducer<AppState, NestIncrementAction>(nestIncrement),
+  TypedReducer<AppState, IntIncrementAction>(intIncrement),
+  TypedReducer<AppState, DoubleIncrementAction>(doubleIncrement),
 ]);
 
-AppState increment(AppState state, IncrementAction action) {
-  return state.copyWith(count: state.count + 1);
+AppState intIncrement(AppState state, IntIncrementAction action) {
+  return state.copyWith(intCount: state.intCount + 1);
 }
 
-AppState nestIncrement(AppState state, NestIncrementAction action) {
-  return state.copyWith(nestCount: state.nestCount + 1);
+AppState doubleIncrement(AppState state, DoubleIncrementAction action) {
+  return state.copyWith(doubleCount: state.doubleCount + 1.0);
 }
 
 void main() {
-  final store =
-      Store<AppState>(counterReducer, initialState: AppState(), middleware: [
-    delayIncrement,
-  ]);
+  final store = Store<AppState>(
+    counterReducer,
+    initialState: AppState(),
+    middleware: [],
+  );
 
   runApp(MyApp(
     title: 'Flutter Redux Demo',
@@ -86,31 +79,13 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class ViewModel {
-  final int count;
-
-  ViewModel({
-    this.count,
-  });
-
-  @override
-  int get hashCode => count.hashCode;
-
-  @override
-  bool operator ==(dynamic other) {
-    return identical(this.hashCode, other.hashCode) &&
-        other is ViewModel &&
-        runtimeType == other.runtimeType;
-  }
-}
-
 class TapViewModel {
-  final VoidCallback onIncrementTap;
-  final VoidCallback onNestIncrementTap;
+  final VoidCallback onIntIncrementTap;
+  final VoidCallback onDoubleIncrement;
 
   TapViewModel({
-    this.onIncrementTap,
-    this.onNestIncrementTap,
+    this.onIntIncrementTap,
+    this.onDoubleIncrement,
   });
 }
 
@@ -128,92 +103,125 @@ class MainScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            StoreConnector<AppState, ViewModel>(
-              distinct: true,
-              converter: (store) => ViewModel(
-                    count: store.state.count,
-                  ),
-              builder: (context, vm) {
-                print('rebuild');
-                return Column(
-                  children: <Widget>[
-                    Text(
-                      vm.count.toString(),
-                      style: Theme.of(context).textTheme.display1,
-                    ),
-                    NestText()
-                  ],
-                );
-              },
-            ),
-            Column(
-              children: <Widget>[
-                StoreConnector<AppState, TapViewModel>(
-                  converter: (store) => TapViewModel(
-                      onIncrementTap: () => store.dispatch(IncrementAction()),
-                      onNestIncrementTap: () =>
-                          store.dispatch(NestIncrementAction())),
-                  ignoreChange: (_) => true,
-                  builder: (context, vm) {
-                    return Column(
-                      children: <Widget>[
-                        RaisedButton(
-                          onPressed: vm.onIncrementTap,
-                          child: const Text('increment'),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            )
-          ],
+      body: Container(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'You have pushed the button this many times:',
+              ),
+              Column(
+                children: <Widget>[
+                  IntText(),
+                  DoubleText(),
+                ],
+              ),
+              StoreConnector<AppState, TapViewModel>(
+                converter: (store) => TapViewModel(
+                    onIntIncrementTap: () =>
+                        store.dispatch(IntIncrementAction()),
+                    onDoubleIncrement: () =>
+                        store.dispatch(DoubleIncrementAction())),
+                ignoreChange: (_) => true,
+                builder: (context, vm) {
+                  return Column(
+                    children: <Widget>[
+                      RaisedButton(
+                        onPressed: vm.onIntIncrementTap,
+                        child: const Text('increment'),
+                      ),
+                      RaisedButton(
+                        onPressed: vm.onDoubleIncrement,
+                        child: const Text('increment'),
+                      ),
+                    ],
+                  );
+                },
+              )
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class NestViewModel {
-  final String nestCount;
+class IntViewModel {
+  final String intCount;
 
-  NestViewModel({
+  IntViewModel({
     AppState state,
-  }) : this.nestCount = state.nestCount.toString();
+  }) : intCount = state.intCount.toString();
 
   @override
-  int get hashCode => nestCount.hashCode;
+  int get hashCode => intCount.hashCode;
 
   @override
-  bool operator ==(dynamic other) {
-    return identical(this.hashCode, other.hashCode) &&
-        other is NestViewModel &&
-        runtimeType == other.runtimeType;
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is IntViewModel &&
+            runtimeType == other.runtimeType &&
+            intCount == other.intCount;
   }
 }
 
-class NestText extends StatefulWidget {
+class IntText extends StatefulWidget {
   @override
-  _NestTextState createState() => _NestTextState();
+  _IntTextState createState() => _IntTextState();
 }
 
-class _NestTextState extends State<NestText> {
+class _IntTextState extends State<IntText> {
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<AppState, NestViewModel>(
+    return StoreConnector<AppState, IntViewModel>(
       distinct: true,
-      converter: (store) => NestViewModel(state: store.state),
-      builder: (context, nestViewModel) {
-        print('nest rebuild');
+      converter: (store) => IntViewModel(state: store.state),
+      builder: (context, viewModel) {
+        print('int rebuild');
         return Text(
-          nestViewModel.nestCount,
+          viewModel.intCount,
+          style: Theme.of(context).textTheme.display1,
+        );
+      },
+    );
+  }
+}
+
+class DoubleViewModel {
+  final String doubleCount;
+
+  DoubleViewModel({
+    AppState state,
+  }) : this.doubleCount = state.doubleCount.toString();
+
+  @override
+  int get hashCode => doubleCount.hashCode;
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        other is DoubleViewModel &&
+            runtimeType == other.runtimeType &&
+            doubleCount == other.doubleCount;
+  }
+}
+
+class DoubleText extends StatefulWidget {
+  @override
+  _DoubleTextState createState() => _DoubleTextState();
+}
+
+class _DoubleTextState extends State<DoubleText> {
+  @override
+  Widget build(BuildContext context) {
+    return StoreConnector<AppState, DoubleViewModel>(
+      distinct: true,
+      converter: (store) => DoubleViewModel(state: store.state),
+      builder: (context, viewModel) {
+        print('double rebuild');
+        return Text(
+          viewModel.doubleCount,
           style: Theme.of(context).textTheme.display1,
         );
       },
